@@ -1,0 +1,18 @@
+# Cloned repositories (managed by devtools.sh)
+teiserver/
+bar-lobby/
+spads_config_bar/
+ansible-spads-setup/
+BYAR-Chobby/
+bar-db/
+bar-live-services/
+SPADS/
+SpringLobbyInterface/
+
+# Personal config overrides
+repos.local.conf
+
+# Runtime / editor state
+tasks/
+.devtools/
+*.log

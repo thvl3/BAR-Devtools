@@ -1,0 +1,86 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: teiserver_dev
+      POSTGRES_PASSWORD: "123456789"
+      POSTGRES_DB: teiserver_dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${BAR_POSTGRES_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U teiserver_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  teiserver:
+    build:
+      context: ./teiserver
+      dockerfile: ../docker/teiserver.dev.Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+      - "8200:8200"
+      - "8201:8201"
+      - "8888:8888"
+    environment:
+      PGHOST: postgres
+      PGPOOL: "20"
+      TEI_DB_HOSTNAME: postgres
+      TEI_DB_USERNAME: teiserver_dev
+      TEI_DB_PASSWORD: "123456789"
+      TEI_DB_NAME: teiserver_dev
+      TEI_DB_POOL_SIZE: "20"
+      TEI_DB_QUEUE_INTERVAL: "5000"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    volumes:
+      - ./docker/teiserver-entrypoint.sh:/entrypoint.sh:ro
+      - ./docker/setup-spads-bot.exs:/setup-spads-bot.exs:ro
+      - devtools_state:/app/.devtools
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 180s
+
+  spads:
+    image: badosu/spads:latest
+    profiles: ["spads"]
+    depends_on:
+      teiserver:
+        condition: service_healthy
+    network_mode: host
+    entrypoint: ["/bin/bash", "/dev-entrypoint.sh"]
+    environment:
+      SPADS_LOBBY_HOST: "127.0.0.1"
+      SPADS_LOBBY_LOGIN: spadsbot
+      SPADS_LOBBY_PASSWORD: password
+      SPADS_REGISTRATION_EMAIL: spads@spads.local
+      SPADS_BASEAUTOHOST_PORT: "54200"
+      SPADS_BATTLENAME_PREFIX: '"DEV - "'
+      SPADS_LAN_IP: "127.0.0.1"
+      SPADS_PLUGINS: '"AutoRegister;BarManager;RatingManager"'
+      SPRING_DATADIR: /spring-data
+      SPRING_WRITEDIR: /spring-data
+      SPRING_HOSTIP: ""
+      SPADS_ARGS: "--tls-cert-trust"
+    volumes:
+      - ./docker/spads-dev-entrypoint.sh:/dev-entrypoint.sh:ro
+      - ./docker/spads_dev.conf:/spads_dev.conf:ro
+      - ./spads_config_bar/etc:/spads_etc:ro
+      - ./spads_config_bar/var:/spads_var:ro
+      - spring_data:/spring-data
+      - spads_cache:/opt/spads/var
+      - spring_engines:/spring-engines
+
+volumes:
+  pgdata:
+  devtools_state:
+  spring_data:
+  spads_cache:
+  spring_engines:
