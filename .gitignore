@@ -1,4 +1,4 @@
-# Cloned repositories (managed by devtools.sh)
+# Cloned repositories (managed via repos.conf)
 teiserver/
 bar-lobby/
 spads_config_bar/
@@ -8,11 +8,16 @@ BYAR-Chobby
 bar-db/
 bar-live-services/
 RecoilEngine
+lua-doc-extractor
 SPADS/
 SpringLobbyInterface/
 
 # Personal config overrides
 repos.local.conf
+.env
+
+# Build artifacts
+bar-lua-codemod/target/
 
 # Runtime / editor state
 tasks/
